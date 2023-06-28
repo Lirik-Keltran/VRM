@@ -1,8 +1,10 @@
 use crate::vrm_values::Value;
 
-pub enum Commands {
+#[derive(Debug)]
+pub enum Command {
     Push(Value),
-    JMP(u32),
+    JMP(usize),
     Add,
     Sub,
+    Stop,
 }
