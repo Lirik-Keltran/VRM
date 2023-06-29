@@ -3,7 +3,8 @@ use crate::{comands::{Command}, vrm_values::Value};
 #[derive(Debug)]
 pub enum VMError {
     UsingNotInitMemory,
-    NotCorrectType
+    IncorrectAdress,
+    NotCorrectType,
 }
 
 pub struct VM {
@@ -40,8 +41,8 @@ impl VM {
             let result = match command {
                 Command::Add => self.add(),
                 Command::Sub => self.sub(),
-                Command::JMP(adress) => self.jump(*adress),
-                Command::Push(value) => self.push(*value),
+                Command::JMP => self.jump(),
+                Command::Push => self.push(),
                 Command::Stop => return None,
             };
 
@@ -56,7 +57,7 @@ impl VM {
         let right = self.memory.pop().ok_or(VMError::UsingNotInitMemory)?;
 
         let value = (left + right).unwrap();
-        let _ = self.push(value);
+        self.memory.push(value);
 
         Ok(())
     }
@@ -66,17 +67,29 @@ impl VM {
         let right = self.memory.pop().ok_or(VMError::UsingNotInitMemory)?;
 
         let value = (left - right).unwrap();
-        let _ = self.push(value);
+        self.memory.push(value);
 
         Ok(())
     }
 
-    fn jump(&mut self, adress: usize) -> ExecuteResult {
-        self.cursor = adress;
-        Ok(())
+    fn jump(&mut self) -> ExecuteResult {
+        let value = self.memory.pop().ok_or(VMError::UsingNotInitMemory)?;
+
+        match value {
+            Value::Int(adress) => {
+                if adress >= 0 {
+                    self.cursor = adress as usize;
+                    Ok(())
+                } else {
+                    Err(VMError::IncorrectAdress)
+                }
+            },
+            _ => Err(VMError::NotCorrectType)
+        }
     }
 
-    fn push(&mut self, value: Value) -> ExecuteResult {
+    fn push(&mut self) -> ExecuteResult {
+        let value = self.memory.pop().ok_or(VMError::UsingNotInitMemory)?;
         self.memory.push(value);
         Ok(())
     }
